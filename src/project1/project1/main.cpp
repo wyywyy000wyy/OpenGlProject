@@ -50,6 +50,19 @@ public:
 	glm::vec3 pos;
 };
 
+class LightProbe
+{
+public:
+	LightProbe(glm::vec3 pos):m_pos(pos), m_shader(FileSystem::getPath("src/project1/project1/LightProbe.vs").c_str(), FileSystem::getPath("src/project1/project1/LightProbe.fs").c_str())
+	{
+
+	}
+
+	Shader m_shader;
+	unsigned int m_probeTexture;
+	glm::vec3 m_pos;
+};
+
 class Cube
 {
 public:
@@ -150,6 +163,67 @@ public:
 	unsigned int m_roughness;
 	unsigned int m_metallic;
 };
+
+class SphericalHarmonics
+{
+#define PI (3.1415926535898)
+public:
+typedef  double(SHFunction)(double x, double y, double z);
+SHFunction* m_shFunction[7] = {
+		//Y3,-3
+		[](double x, double y, double z)->double {
+			float c = 1.0 / 4 * sqrt(35 / (2 * PI));
+			return c * (3 * x*x - y * y) * y;
+		},
+		//Y3, -2
+		[](double x, double y, double z)->double {
+			float c = 1.0 / 2 * sqrt(105 / PI);
+			return c*x*y*z;
+		},
+		//Y3, -1
+		[](double x, double y, double z)->double {
+			float c = 1.0 / 4 * sqrt(21 / (2 * PI));
+			return c * y * (4 * z * z - x * x - y * y);
+		},
+		//Y3, 0
+		[](double x, double y, double z)->double {
+			float c = 1.0 / 4 * sqrt(7 / PI);
+			return c * z * (2 * z * z - 3 * x * x - 3 * y * y);
+		},
+		//Y3, 1
+		[](double x, double y, double z)->double {
+			float c = 1.0 / 4 * sqrt(21 / (2 * PI));
+			return c * x * (4 * z * z - x * x - y * y);
+		},
+		//Y3, 2
+		[](double x, double y, double z)->double {
+			float c = 1.0 / 4 * sqrt(105 / PI);
+			return c * (x * x - y * y) * z;
+		},
+		//Y3, 3
+		[](double x, double y, double z)->double {
+			float c = 1.0 / 4 * sqrt(35 / (2 * PI));
+			return c * (x * x - 3 * y * y) * x;
+		}
+	};
+
+
+
+public:
+	struct SHSampleData {
+		double x;
+		double y;
+		double z;
+		double result;
+	};
+	void Calc(vector<SHSampleData>& data)
+	{
+
+	}
+	
+};
+
+SphericalHarmonics ssh;
 
 class Plane
 {
@@ -276,7 +350,6 @@ int main()
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
 #endif
-
 	// glfw window creation
 	// --------------------
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
@@ -301,6 +374,11 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+
+	typedef BOOL(APIENTRY *PFNWGLSWAPINTERVALFARPROC)(int);
+	PFNWGLSWAPINTERVALFARPROC wglSwapIntervalEXT = 0;
+	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALFARPROC)wglGetProcAddress("wglSwapIntervalEXT");
+	wglSwapIntervalEXT(0);
 
 	// configure global opengl state
 	// -----------------------------
@@ -654,7 +732,6 @@ void renderSphere()
 
 		const unsigned int X_SEGMENTS = 64;
 		const unsigned int Y_SEGMENTS = 64;
-		const float PI = 3.14159265359;
 		for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
 		{
 			for (unsigned int x = 0; x <= X_SEGMENTS; ++x)

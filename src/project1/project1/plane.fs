@@ -356,22 +356,14 @@ vec3 fDiff_KelemenAndSzirmayKalos(float F0, vec3 albedo, vec3 n, vec3 l, vec3 v)
 	return RspecL;
 }
 
-void main()
-{             
-    
+void PBS()
+{
 	vec3 normal = GetNormal();
 	vec3 LightDir = gLightPos - WorldPos;
-
-	float pss = max(dot(gLightDir, normal), 0.0);
-
-	vec3 color = texture(gTexture, TexCoords).rgb;
-	//color = color * pss;
-
-	//FragColor = vec4(color, 1.0);
-
 	vec3 color1 = GGX(gLightDir);
-	float weight = dot(gLightDir, normalize( LightDir));
+	float weight = dot(gLightDir, normalize(LightDir));
 	float LightMask = pow(clamp(1 - dot(LightDir, LightDir) * InvRadius * InvRadius, 0.0f, 1.0f), 2);
+	vec3 color = texture(gTexture, TexCoords).rgb;
 
 	vec3 ambient = color * 0.3;
 
@@ -384,4 +376,19 @@ void main()
 
 	FragColor = vec4(color, 1.0);
 	FragColor = vec4(finalColor, 1.0);
+}
+
+void main()
+{             
+    
+	vec3 normal = GetNormal();
+	vec3 LightDir = gLightPos - WorldPos;
+
+	float pss = max(dot(gLightDir, normal), 0.0);
+
+	vec3 color = texture(gTexture, TexCoords).rgb;
+	color = color * pss;
+	FragColor = vec4(color, 1.0);
+	//PBS();
+	
 }
