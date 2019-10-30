@@ -10,6 +10,8 @@
 #include <learnopengl/shader.h>
 #include <learnopengl/camera.h>
 #include <learnopengl/model.h>
+#include "Application.h"
+#include "Simulator/SceneSimulator.h"
 
 #include <iostream>
 
@@ -62,6 +64,18 @@ public:
 	unsigned int m_probeTexture;
 	glm::vec3 m_pos;
 };
+
+
+
+void interpolate_picture(const char* pic1, const char* pic2)
+{
+	int width, height, nrComponents;
+	unsigned char *data1 = stbi_load(pic1, &width, &height, &nrComponents, 0);
+	unsigned char *data2 = stbi_load(pic2, &width, &height, &nrComponents, 0);
+
+	int x, y;
+}
+
 
 class Cube
 {
@@ -216,11 +230,88 @@ public:
 		double z;
 		double result;
 	};
-	void Calc(vector<SHSampleData>& data)
-	{
+	//因式分解
 
+	template<int TD>
+	static vector<double> Calc(vector<vector<double>>& matrix)
+	{
+		cout << "Calc" << endl;
+		vector<double> result(TD);
+		for (int i = 0; i < TD; ++i)
+		{
+			double n = matrix[i][i];
+			for (int j = i; j <= TD; ++j)
+			{
+				matrix[i][j] = matrix[i][j] / n;
+			}
+			for (int j = 0; j <= TD; ++j)
+			{
+				cout << matrix[i][j] << "\t\t";
+			}
+			cout << endl;
+			for (int j = i + 1; j < TD; ++j)
+			{
+				double n = matrix[j][i] / matrix[i][i];
+				for (int k = 0; k <= TD; ++k)
+				{
+					matrix[j][k] = matrix[j][k] - matrix[i][k] * n;
+				}
+			}
+		}
+		for (int i = TD - 1; i >= 0; --i)
+		{
+			result[i] = matrix[i][TD];
+			for (int j = TD - 1; j > i; --j)
+			{
+				result[i] = result[i] - result[j] * matrix[i][j];
+			}
+		}
+
+		return result;
 	}
-	
+
+	void CalcSh(vector<SHSampleData>& data)
+	{
+		vector<vector<double>> matrix(7);
+		for (int i = 0; i < 7; ++i)
+		{
+			matrix[i].resize(8);
+			auto& d = data[i];
+			for (int j = 0; j < 7; ++i)
+			{
+				matrix[i][j] = m_shFunction[j](d.x, d.y, d.z);
+			}
+			matrix[i][7] = d.result;
+		}
+		Calc<7>(matrix);
+	}
+
+
+	void testCalc()
+	{
+		vector<vector<double>> matrix = {
+			{2,3,4, 44},
+			{5,7,9, 103},
+			{1,5,3, 47},
+		};
+
+		cout << "MAXTRIX: " << endl;
+		for (int i = 0; i < matrix.size(); ++i)
+		{
+			for (int j = 0; j < matrix[i].size(); ++j)
+			{
+				cout << matrix[i][j] << " ";
+			}
+			cout << endl;
+		}
+		cout << "Result: " << endl;
+		auto result = Calc<3>(matrix);
+		for (int i = 0; i < result.size() - 1; ++i)
+		{
+			cout << char('a' + i) << "*" << result[i] << " + ";
+		}
+		cout << char('a' + result.size() - 1) << "*" << result[result.size() - 1] << endl;
+	}
 };
 
 SphericalHarmonics ssh;
@@ -363,7 +454,7 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-
+	ssh.testCalc();
 	// tell GLFW to capture our mouse
 	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -443,6 +534,10 @@ int main()
 	// build and compile shaders
 	// -------------------------
 
+
+	App()->Start();
+	SceneSimulator sim;
+	sim.Start();
 	Light l;
 	l.pos = glm::vec3(0,5,-10);
 	l.m_shader.setInt("gTexture", 0);
@@ -497,7 +592,6 @@ int main()
 	Plane p(l);
 	p.shader.use();
 	p.shader.setMat4("projection", projection);
-
 	// render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))
@@ -511,6 +605,9 @@ int main()
 		// input
 		// -----
 		processInput(window);
+
+		App()->Update();
+		App()->Render();
 
 		// render
 		// ------

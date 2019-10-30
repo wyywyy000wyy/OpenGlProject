@@ -196,6 +196,10 @@ foreach(CHAPTER ${CHAPTERS})
             "src/${CHAPTER}/${DEMO}/*.vs"
             "src/${CHAPTER}/${DEMO}/*.fs"
             "src/${CHAPTER}/${DEMO}/*.gs"
+			"src/${CHAPTER}/${DEMO}/engine/*.h"
+            "src/${CHAPTER}/${DEMO}/engine/*.cpp"
+            "src/${CHAPTER}/${DEMO}/Simulator/*.h"
+            "src/${CHAPTER}/${DEMO}/Simulator/*.cpp"
         )
         set(NAME "${CHAPTER}__${DEMO}")
         add_executable(${NAME} ${SOURCE})
